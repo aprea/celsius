@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import type { NextPage } from "next";
 import Select from "react-select";
 import CRYPTO_PRICES from "../crypto-prices.json";
-import useLocalStorage from "./local-storage";
+import useLocalStorage from "../controllers/local-storage";
 import {
   Table,
   TableBody,
