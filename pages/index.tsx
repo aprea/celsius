@@ -1,7 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { NextPage } from "next";
 import Select from "react-select";
-import CRYPTO_PRICES from "../crypto-prices.json";
 import useLocalStorage from "../controllers/local-storage";
 import {
   Table,
@@ -16,36 +15,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const LAST_UPDATED = CRYPTO_PRICES.lastFetched;
-
 const BTC_HOLDINGS = 38_000;
-const BTC_HOLDINGS_USD = BTC_HOLDINGS * CRYPTO_PRICES.btc;
 const ETH_HOLDINGS = 888_000;
-const ETH_HOLDINGS_USD = ETH_HOLDINGS * CRYPTO_PRICES.eth;
+
 const ILLIQUID_HOLDINGS_USD = 305_000_000;
 const MININGCO_NET_ASSET_VALUE_USD = 740_000_000;
 const TOTAL_DEDUCTIONS_USD = 788_000_000;
 const TOTAL_REMAINING_CLAIMS_USD = 4_225_000_000;
-
-const AVAILABLE_LIQUID_CRYPTO_USD =
-  BTC_HOLDINGS_USD + ETH_HOLDINGS_USD - TOTAL_DEDUCTIONS_USD;
-
-const TOTAL_DISTRIBUTABLE_VALUE_USD =
-  AVAILABLE_LIQUID_CRYPTO_USD +
-  ILLIQUID_HOLDINGS_USD +
-  MININGCO_NET_ASSET_VALUE_USD;
-
-const LIQUID_CRYPTO_RECOVERY_PCT =
-  AVAILABLE_LIQUID_CRYPTO_USD / TOTAL_REMAINING_CLAIMS_USD;
 
 const ILLIQUID_RECOVERY_PCT =
   ILLIQUID_HOLDINGS_USD / TOTAL_REMAINING_CLAIMS_USD;
 
 const MININGCO_RECOVERY_PCT =
   MININGCO_NET_ASSET_VALUE_USD / TOTAL_REMAINING_CLAIMS_USD;
-
-const TOTAL_RECOVERY_PCT =
-  TOTAL_DISTRIBUTABLE_VALUE_USD / TOTAL_REMAINING_CLAIMS_USD;
 
 const PETITION_DATE_COIN_PRICES: Record<string, number> = {
   "1INCH": 0.581744108,
@@ -125,14 +107,60 @@ const Home: NextPage = () => {
     Record<string, number | "">
   >("selectedCoins", {});
   const [addingCoin, setAddingCoin] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [cryptoPrices, setCryptoPrices] = useState<Record<string, number>>(
+    () => ({
+      btc: 0,
+      eth: 0,
+    })
+  );
   const selectRef = useRef(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setCryptoPrices({
+          btc: res.bitcoin.usd,
+          eth: res.ethereum.usd,
+        });
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setHasError(true);
+        setIsLoading(false);
+      });
+  }, []);
 
   const totalUSD = Object.entries(selectedCoins).reduce(
     (total, [coin, balance]) =>
       total + PETITION_DATE_COIN_PRICES[coin] * (balance || 0),
     0
   );
+
   const totalUSDWithIncrease = totalUSD * 1.05;
+
+  const btcHoldingsUsd = BTC_HOLDINGS * cryptoPrices.btc;
+  const ethHoldingsUsd = ETH_HOLDINGS * cryptoPrices.eth;
+
+  const availableLiquidCryptoUsd =
+    btcHoldingsUsd + ethHoldingsUsd - TOTAL_DEDUCTIONS_USD;
+
+  const totalDistributableValueUsd =
+    availableLiquidCryptoUsd +
+    ILLIQUID_HOLDINGS_USD +
+    MININGCO_NET_ASSET_VALUE_USD;
+
+  const liquidCryptoRecoveryPct =
+    availableLiquidCryptoUsd / TOTAL_REMAINING_CLAIMS_USD;
+
+  const totalRecoveryPct =
+    totalDistributableValueUsd / TOTAL_REMAINING_CLAIMS_USD;
 
   const handleClear = () => {
     setSelectedCoins({});
@@ -147,6 +175,38 @@ const Home: NextPage = () => {
     const { [coin]: removedCoin, ...remainingCoins } = selectedCoins;
     setSelectedCoins(remainingCoins);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen py-6 flex flex-col justify-center sm:py-12">
+        <Card className="w-full max-w-xl mx-auto">
+          <CardHeader>
+            <CardTitle>Celsius claim calculator</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700">Fetching crypto prices...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen py-6 flex flex-col justify-center sm:py-12">
+        <Card className="w-full max-w-xl mx-auto">
+          <CardHeader>
+            <CardTitle>Celsius claim calculator</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">
+              Error fetching crypto prices. Please try again later.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -257,31 +317,29 @@ const Home: NextPage = () => {
                 <TableRow>
                   <TableCell>Liquid crypto</TableCell>
                   <TableCell className="text-right">
-                    {(LIQUID_CRYPTO_RECOVERY_PCT * 100).toFixed(2)}%
+                    {(liquidCryptoRecoveryPct * 100).toFixed(2)}%
                   </TableCell>
                   <TableCell className="text-right">
                     {new Intl.NumberFormat("en-US", {
                       style: "currency",
                       currency: "USD",
-                    }).format(
-                      totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT
-                    )}
+                    }).format(totalUSDWithIncrease * liquidCryptoRecoveryPct)}
                     <div className="text-gray-700 text-xs">
                       <div>
                         ~
                         {(
-                          (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
+                          (totalUSDWithIncrease * liquidCryptoRecoveryPct) /
                           2 /
-                          CRYPTO_PRICES["btc"]
+                          cryptoPrices.btc
                         ).toFixed(4)}{" "}
                         BTC
                       </div>
                       <div>
                         ~
                         {(
-                          (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
+                          (totalUSDWithIncrease * liquidCryptoRecoveryPct) /
                           2 /
-                          CRYPTO_PRICES["eth"]
+                          cryptoPrices.eth
                         ).toFixed(4)}{" "}
                         ETH
                       </div>
@@ -317,7 +375,7 @@ const Home: NextPage = () => {
                 <TableRow>
                   <TableCell>Total estimated recovery</TableCell>
                   <TableCell className="text-right">
-                    {(TOTAL_RECOVERY_PCT * 100).toFixed(2)}%
+                    {(totalRecoveryPct * 100).toFixed(2)}%
                   </TableCell>
                   <TableCell className="text-right">
                     {new Intl.NumberFormat("en-US", {
@@ -325,7 +383,7 @@ const Home: NextPage = () => {
                       currency: "USD",
                     }).format(
                       totalUSDWithIncrease *
-                        (LIQUID_CRYPTO_RECOVERY_PCT +
+                        (liquidCryptoRecoveryPct +
                           ILLIQUID_RECOVERY_PCT +
                           MININGCO_RECOVERY_PCT)
                     )}
@@ -364,7 +422,6 @@ const Home: NextPage = () => {
             omissions, or for the results obtained from the use of this
             information.
           </p>
-          <p>Last updated: {new Date(LAST_UPDATED).toUTCString()}</p>
         </div>
       </div>
     </>
