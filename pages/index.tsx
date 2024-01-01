@@ -1,8 +1,51 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import type { NextPage } from "next";
 import Select from "react-select";
+import CRYPTO_PRICES from "../crypto-prices.json";
+import useLocalStorage from "./local-storage";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const coinPrices: Record<string, number> = {
+const BTC_HOLDINGS = 38_000;
+const BTC_HOLDINGS_USD = BTC_HOLDINGS * CRYPTO_PRICES["btc"];
+const ETH_HOLDINGS = 888_000;
+const ETH_HOLDINGS_USD = ETH_HOLDINGS * CRYPTO_PRICES["eth"];
+const ILLIQUID_HOLDINGS_USD = 305_000_000;
+const MININGCO_NET_ASSET_VALUE_USD = 740_000_000;
+const TOTAL_DEDUCTIONS_USD = 788_000_000;
+const TOTAL_REMAINING_CLAIMS_USD = 4_225_000_000;
+
+const AVAILABLE_LIQUID_CRYPTO_USD =
+  BTC_HOLDINGS_USD + ETH_HOLDINGS_USD - TOTAL_DEDUCTIONS_USD;
+
+const TOTAL_DISTRIBUTABLE_VALUE_USD =
+  AVAILABLE_LIQUID_CRYPTO_USD +
+  ILLIQUID_HOLDINGS_USD +
+  MININGCO_NET_ASSET_VALUE_USD;
+
+const LIQUID_CRYPTO_RECOVERY_PCT =
+  AVAILABLE_LIQUID_CRYPTO_USD / TOTAL_REMAINING_CLAIMS_USD;
+
+const ILLIQUID_RECOVERY_PCT =
+  ILLIQUID_HOLDINGS_USD / TOTAL_REMAINING_CLAIMS_USD;
+
+const MININGCO_RECOVERY_PCT =
+  MININGCO_NET_ASSET_VALUE_USD / TOTAL_REMAINING_CLAIMS_USD;
+
+const TOTAL_RECOVERY_PCT =
+  TOTAL_DISTRIBUTABLE_VALUE_USD / TOTAL_REMAINING_CLAIMS_USD;
+
+const PETITION_DATE_COIN_PRICES: Record<string, number> = {
   "1INCH": 0.581744108,
   AAVE: 78.24291593,
   ADA: 0.427003308,
@@ -16,7 +59,7 @@ const coinPrices: Record<string, number> = {
   BTC: 19881.00134,
   BTG: 15.14018234,
   BUSD: 1,
-  CEL: 0.81565,
+  CEL: 0.25,
   COMP: 47.33041601,
   CRV: 1.032841943,
   CVX: 6.08763006,
@@ -70,44 +113,24 @@ const coinPrices: Record<string, number> = {
   ZUSD: 1,
 };
 
-const coinOptions = Object.keys(coinPrices).map((coin) => ({
+const coinOptions = Object.keys(PETITION_DATE_COIN_PRICES).map((coin) => ({
   value: coin,
   label: coin,
 }));
 
-const debounce = (func: Function, wait: number) => {
-  let timeout: NodeJS.Timeout;
-  return function (...args: any) {
-    const context = this;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(context, args), wait);
-  };
-};
-
 const Home: NextPage = () => {
-  const [selectedCoins, setSelectedCoins] = useState<
+  const [selectedCoins, setSelectedCoins] = useLocalStorage<
     Record<string, number | "">
-  >({});
-  const [totalUSD, setTotalUSD] = useState<number>(0);
+  >("selectedCoins", {});
   const [addingCoin, setAddingCoin] = useState<boolean>(false);
   const selectRef = useRef(null);
-  const totalUSDWithIncrease = totalUSD * 1.05;
 
-  // Calculate total USD with debounce
-  const delayedCalculation = useCallback(
-    debounce(() => {
-      const total = Object.entries(selectedCoins).reduce(
-        (total, [coin, balance]) => total + coinPrices[coin] * (balance || 0),
-        0
-      );
-      setTotalUSD(total);
-    }, 500),
-    [selectedCoins]
+  const totalUSD = Object.entries(selectedCoins).reduce(
+    (total, [coin, balance]) =>
+      total + PETITION_DATE_COIN_PRICES[coin] * (balance || 0),
+    0
   );
-
-  useEffect(() => {
-    delayedCalculation();
-  }, [selectedCoins, delayedCalculation]);
+  const totalUSDWithIncrease = totalUSD * 1.05;
 
   const handleClear = () => {
     setSelectedCoins({});
@@ -125,145 +148,196 @@ const Home: NextPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
-      <div className="w-full max-w-xl mx-auto p-4 rounded-lg shadow-md bg-white">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Celsius Claim Calculator
-        </h1>
-        {addingCoin ? (
-          <Select
-            ref={selectRef}
-            options={coinOptions}
-            className="mb-4"
-            placeholder="Select a coin..."
-            isClearable
-            onBlur={() => setAddingCoin(false)}
-            onChange={({ value }) => {
-              setSelectedCoins({
-                ...selectedCoins,
-                [value]: selectedCoins[value] || "",
-              });
-              setAddingCoin(false);
-            }}
-          />
-        ) : (
-          <button
-            onClick={handleAddCoin}
-            className="mb-4 bg-blue-600 text-white px-3 py-1 rounded-md"
-          >
-            Add Coin
-          </button>
-        )}
-        {Object.keys(selectedCoins).map((coin) => (
-          <div key={coin} className="mb-4">
-            <label
-              htmlFor={coin}
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              {coin} balance:
-            </label>
-            <div className="flex justify-between gap-2">
-              <input
-                type="number"
-                id={coin}
-                value={selectedCoins[coin]}
-                className="p-2 block w-full border border-gray-300 rounded-md flex-1"
-                onChange={(e) =>
-                  setSelectedCoins({
-                    ...selectedCoins,
-                    [coin]:
-                      e.target.value === "" ? "" : parseFloat(e.target.value),
-                  })
-                }
-              />
-              <button
-                className="bg-red-600 text-white px-3 py-1 rounded-md"
-                onClick={() => handleRemoveCoin(coin)}
+      <Card className="w-full max-w-xl mx-auto">
+        <CardHeader>
+          <CardTitle>Celsius claim calculator</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="list-decimal list-inside mb-6 space-y-2">
+            <li>Open the Celsius app.</li>
+            <li>
+              Add the balance of each coin you have in your Celsius wallet using
+              the "Add coin" button below.
+            </li>
+          </ol>
+          {addingCoin ? (
+            <Select
+              ref={selectRef}
+              options={coinOptions}
+              className="mb-4"
+              placeholder="Select a coin..."
+              isClearable
+              onBlur={() => setAddingCoin(false)}
+              onChange={({ value }) => {
+                setSelectedCoins({
+                  ...selectedCoins,
+                  [value]: selectedCoins[value] || "",
+                });
+                setAddingCoin(false);
+              }}
+            />
+          ) : (
+            <Button onClick={handleAddCoin} className="mb-4">
+              Add coin
+            </Button>
+          )}
+          {Object.keys(selectedCoins).map((coin) => (
+            <div key={coin} className="mb-4">
+              <label
+                htmlFor={coin}
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Remove
-              </button>
+                {coin} balance:
+              </label>
+              <div className="flex justify-between gap-2">
+                <Input
+                  type="number"
+                  id={coin}
+                  value={selectedCoins[coin]}
+                  className="p-2 block w-full border border-gray-300 rounded-md flex-1"
+                  onChange={(e) =>
+                    setSelectedCoins({
+                      ...selectedCoins,
+                      [coin]:
+                        e.target.value === "" ? "" : parseFloat(e.target.value),
+                    })
+                  }
+                />
+                <Button
+                  variant="destructive"
+                  onClick={() => handleRemoveCoin(coin)}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ))}
+          <div className="flex items-center justify-between">
+            <Button variant="secondary" onClick={handleClear}>
+              Clear
+            </Button>
+            <div className="text-right text-xl font-semibold">
+              <p className="text-lg text-gray-700">
+                Claim value:{" "}
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(totalUSD)}
+              </p>
+              <p>
+                Claim value + 5%:{" "}
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(totalUSDWithIncrease)}
+              </p>
             </div>
           </div>
-        ))}
-        <div className="flex items-center justify-between">
-          <button
-            className="bg-gray-300 text-gray-700 px-3 py-1 rounded-md"
-            onClick={handleClear}
-          >
-            Clear
-          </button>
-          <div className="text-xl font-semibold">
-            Total USD Value:{" "}
-            {new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: "USD",
-            }).format(totalUSD)}
+        </CardContent>
+      </Card>
+      <Card className="w-full max-w-xl mx-auto mt-8">
+        <CardHeader>
+          <CardTitle>Estimated recovery</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Recovery %</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>Liquid crypto</TableCell>
+                <TableCell className="text-right">
+                  {(LIQUID_CRYPTO_RECOVERY_PCT * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT)}
+                  <div className="text-gray-700 text-xs">
+                    <div>
+                      ~
+                      {(
+                        (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
+                        2 /
+                        CRYPTO_PRICES["btc"]
+                      ).toFixed(4)}{" "}
+                      BTC
+                    </div>
+                    <div>
+                      ~
+                      {(
+                        (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
+                        2 /
+                        CRYPTO_PRICES["eth"]
+                      ).toFixed(4)}{" "}
+                      ETH
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Illiquid asset recovery</TableCell>
+                <TableCell className="text-right">
+                  {(ILLIQUID_RECOVERY_PCT * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSDWithIncrease * ILLIQUID_RECOVERY_PCT)}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>MiningCo common stock</TableCell>
+                <TableCell className="text-right">
+                  {(MININGCO_RECOVERY_PCT * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSDWithIncrease * MININGCO_RECOVERY_PCT)}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell>Total estimated recovery</TableCell>
+                <TableCell className="text-right">
+                  {(TOTAL_RECOVERY_PCT * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(
+                    totalUSDWithIncrease *
+                      (LIQUID_CRYPTO_RECOVERY_PCT +
+                        ILLIQUID_RECOVERY_PCT +
+                        MININGCO_RECOVERY_PCT)
+                  )}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+          <div className="mt-4 text-gray-700 text-sm">
+            <p>This calculator does not take into account:</p>
+            <ul className="list-disc list-inside">
+              <li>Clawbacks</li>
+              <li>
+                Undistributed Claims (available at least one year after
+                effective date)
+              </li>
+            </ul>
           </div>
-        </div>
-      </div>
-      <div className="w-full max-w-xl mx-auto mt-8 p-4 rounded-lg shadow-md bg-white">
-        <h2 className="text-2xl font-bold mb-4 text-center">
-          Estimated Recovery
-        </h2>
-        <p className="mb-1">
-          105% claim:{" "}
-          {new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-          }).format(totalUSDWithIncrease)}
-        </p>
-        <p className="text-sm text-gray-500 mb-4">
-          Disclaimer: must vote for plan & not opt-out of class-claim.
-        </p>
-        <div className="min-w-full divide-y divide-gray-200">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              <tr>
-                <td className="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">
-                  37% liquid crypto
-                </td>
-                <td className="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(totalUSDWithIncrease * 0.37)}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">
-                  30% NewCo equity
-                </td>
-                <td className="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(totalUSDWithIncrease * 0.3)}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500 font-bold">
-                  Total estimated recovery
-                </td>
-                <td className="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right font-bold">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(totalUSDWithIncrease * 0.67)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
       <div className="w-full max-w-xl mx-auto mt-8 px-4 text-center text-sm text-gray-700">
         <p>
           Disclaimer: This calculator is provided for informational purposes
