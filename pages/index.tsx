@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { NextPage } from "next";
-import Select from "react-select";
+import Select, { type SelectInstance } from "react-select";
 import useLocalStorage from "../controllers/local-storage";
 import {
   Table,
@@ -29,7 +29,7 @@ const ILLIQUID_RECOVERY_PCT =
 const MININGCO_RECOVERY_PCT =
   MININGCO_NET_ASSET_VALUE_USD / TOTAL_REMAINING_CLAIMS_USD;
 
-const PETITION_DATE_COIN_PRICES: Record<string, number> = {
+const PETITION_DATE_COIN_PRICES = {
   "1INCH": 0.581744108,
   AAVE: 78.24291593,
   ADA: 0.427003308,
@@ -95,7 +95,7 @@ const PETITION_DATE_COIN_PRICES: Record<string, number> = {
   ZEC: 53.54163596,
   ZRX: 0.277486691,
   ZUSD: 1,
-};
+} as const;
 
 const coinOptions = Object.keys(PETITION_DATE_COIN_PRICES).map((coin) => ({
   value: coin,
@@ -115,7 +115,7 @@ const Home: NextPage = () => {
       eth: 0,
     })
   );
-  const selectRef = useRef(null);
+  const selectRef = useRef<SelectInstance>(null);
 
   useEffect(() => {
     setIsLoading(true);
@@ -168,7 +168,7 @@ const Home: NextPage = () => {
 
   const handleAddCoin = () => {
     setAddingCoin(true);
-    setTimeout(() => selectRef.current.focus(), 10); // focus the select input
+    setTimeout(() => selectRef.current?.focus(), 10); // focus the select input
   };
 
   const handleRemoveCoin = (coin: string) => {
