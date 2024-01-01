@@ -216,7 +216,7 @@ const Home: NextPage = () => {
             <CardTitle>Celsius claim calculator</CardTitle>
           </CardHeader>
           <CardContent>
-            <ol className="list-decimal list-outside mb-6 space-y-2 ml-5">
+            <ol className="list-decimal list-outside mb-6 space-y-2 ml-6">
               <li>Open the Celsius app.</li>
               <li>
                 Add the balance of each coin you have in your Celsius wallet
