@@ -16,10 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const LAST_UPDATED = CRYPTO_PRICES.lastFetched;
+
 const BTC_HOLDINGS = 38_000;
-const BTC_HOLDINGS_USD = BTC_HOLDINGS * CRYPTO_PRICES["btc"];
+const BTC_HOLDINGS_USD = BTC_HOLDINGS * CRYPTO_PRICES.btc;
 const ETH_HOLDINGS = 888_000;
-const ETH_HOLDINGS_USD = ETH_HOLDINGS * CRYPTO_PRICES["eth"];
+const ETH_HOLDINGS_USD = ETH_HOLDINGS * CRYPTO_PRICES.eth;
 const ILLIQUID_HOLDINGS_USD = 305_000_000;
 const MININGCO_NET_ASSET_VALUE_USD = 740_000_000;
 const TOTAL_DEDUCTIONS_USD = 788_000_000;
@@ -356,6 +358,7 @@ const Home: NextPage = () => {
           decisions. We are not responsible for any errors or omissions, or for
           the results obtained from the use of this information.
         </p>
+        <p>Last updated: {new Date(LAST_UPDATED).toUTCString()}</p>
       </div>
     </div>
   );
