@@ -338,7 +338,17 @@ const Home: NextPage = () => {
           </div>
         </CardContent>
       </Card>
-      <div className="w-full max-w-xl mx-auto mt-8 px-4 text-center text-sm text-gray-700">
+      <div className="w-full max-w-xl mx-auto mt-8 px-4 text-center text-sm text-gray-700 space-y-2">
+        <p>
+          Based on the Celsius Recovery Sheet created by{" "}
+          <a
+            href="https://twitter.com/bayanimills"
+            className="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+          >
+            @bayanimills
+          </a>
+          .
+        </p>
         <p>
           Disclaimer: This calculator is provided for informational purposes
           only and should not be considered legal, tax, or financial advice.
