@@ -149,218 +149,225 @@ const Home: NextPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
-      <Card className="w-full max-w-xl mx-auto">
-        <CardHeader>
-          <CardTitle>Celsius claim calculator</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ol className="list-decimal list-inside mb-6 space-y-2">
-            <li>Open the Celsius app.</li>
-            <li>
-              Add the balance of each coin you have in your Celsius wallet using
-              the "Add coin" button below.
-            </li>
-          </ol>
-          {addingCoin ? (
-            <Select
-              ref={selectRef}
-              options={coinOptions}
-              className="mb-4"
-              placeholder="Select a coin..."
-              isClearable
-              onBlur={() => setAddingCoin(false)}
-              onChange={({ value }) => {
-                setSelectedCoins({
-                  ...selectedCoins,
-                  [value]: selectedCoins[value] || "",
-                });
-                setAddingCoin(false);
-              }}
-            />
-          ) : (
-            <Button onClick={handleAddCoin} className="mb-4">
-              Add coin
-            </Button>
-          )}
-          {Object.keys(selectedCoins).map((coin) => (
-            <div key={coin} className="mb-4">
-              <label
-                htmlFor={coin}
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                {coin} balance:
-              </label>
-              <div className="flex justify-between gap-2">
-                <Input
-                  type="number"
-                  id={coin}
-                  value={selectedCoins[coin]}
-                  className="p-2 block w-full border border-gray-300 rounded-md flex-1"
-                  onChange={(e) =>
-                    setSelectedCoins({
-                      ...selectedCoins,
-                      [coin]:
-                        e.target.value === "" ? "" : parseFloat(e.target.value),
-                    })
-                  }
-                />
-                <Button
-                  variant="destructive"
-                  onClick={() => handleRemoveCoin(coin)}
+    <>
+      <div className="min-h-screen py-6 flex flex-col justify-center sm:py-12">
+        <Card className="w-full max-w-xl mx-auto">
+          <CardHeader>
+            <CardTitle>Celsius claim calculator</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="list-decimal list-inside mb-6 space-y-2">
+              <li>Open the Celsius app.</li>
+              <li>
+                Add the balance of each coin you have in your Celsius wallet
+                using the "Add coin" button below.
+              </li>
+            </ol>
+            {addingCoin ? (
+              <Select
+                ref={selectRef}
+                options={coinOptions}
+                className="mb-4"
+                placeholder="Select a coin..."
+                isClearable
+                onBlur={() => setAddingCoin(false)}
+                onChange={({ value }) => {
+                  setSelectedCoins({
+                    ...selectedCoins,
+                    [value]: selectedCoins[value] || "",
+                  });
+                  setAddingCoin(false);
+                }}
+              />
+            ) : (
+              <Button onClick={handleAddCoin} className="mb-4">
+                Add coin
+              </Button>
+            )}
+            {Object.keys(selectedCoins).map((coin) => (
+              <div key={coin} className="mb-4">
+                <label
+                  htmlFor={coin}
+                  className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Remove
-                </Button>
+                  {coin} balance:
+                </label>
+                <div className="flex justify-between gap-2">
+                  <Input
+                    type="number"
+                    id={coin}
+                    value={selectedCoins[coin]}
+                    className="p-2 block w-full border border-gray-300 rounded-md flex-1 text-base"
+                    onChange={(e) =>
+                      setSelectedCoins({
+                        ...selectedCoins,
+                        [coin]:
+                          e.target.value === ""
+                            ? ""
+                            : parseFloat(e.target.value),
+                      })
+                    }
+                  />
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleRemoveCoin(coin)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between">
+              <Button variant="secondary" onClick={handleClear}>
+                Clear
+              </Button>
+              <div className="text-right text-xl font-semibold">
+                <p className="text-lg text-gray-700">
+                  Claim value:{" "}
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSD)}
+                </p>
+                <p>
+                  Claim value + 5%:{" "}
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSDWithIncrease)}
+                </p>
               </div>
             </div>
-          ))}
-          <div className="flex items-center justify-between">
-            <Button variant="secondary" onClick={handleClear}>
-              Clear
-            </Button>
-            <div className="text-right text-xl font-semibold">
-              <p className="text-lg text-gray-700">
-                Claim value:{" "}
-                {new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(totalUSD)}
-              </p>
-              <p>
-                Claim value + 5%:{" "}
-                {new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(totalUSDWithIncrease)}
-              </p>
+          </CardContent>
+        </Card>
+        <Card className="w-full max-w-xl mx-auto mt-8">
+          <CardHeader>
+            <CardTitle>Estimated recovery</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Recovery %</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Liquid crypto</TableCell>
+                  <TableCell className="text-right">
+                    {(LIQUID_CRYPTO_RECOVERY_PCT * 100).toFixed(2)}%
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(
+                      totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT
+                    )}
+                    <div className="text-gray-700 text-xs">
+                      <div>
+                        ~
+                        {(
+                          (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
+                          2 /
+                          CRYPTO_PRICES["btc"]
+                        ).toFixed(4)}{" "}
+                        BTC
+                      </div>
+                      <div>
+                        ~
+                        {(
+                          (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
+                          2 /
+                          CRYPTO_PRICES["eth"]
+                        ).toFixed(4)}{" "}
+                        ETH
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Illiquid asset recovery</TableCell>
+                  <TableCell className="text-right">
+                    {(ILLIQUID_RECOVERY_PCT * 100).toFixed(2)}%
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(totalUSDWithIncrease * ILLIQUID_RECOVERY_PCT)}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>MiningCo common stock</TableCell>
+                  <TableCell className="text-right">
+                    {(MININGCO_RECOVERY_PCT * 100).toFixed(2)}%
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(totalUSDWithIncrease * MININGCO_RECOVERY_PCT)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell>Total estimated recovery</TableCell>
+                  <TableCell className="text-right">
+                    {(TOTAL_RECOVERY_PCT * 100).toFixed(2)}%
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(
+                      totalUSDWithIncrease *
+                        (LIQUID_CRYPTO_RECOVERY_PCT +
+                          ILLIQUID_RECOVERY_PCT +
+                          MININGCO_RECOVERY_PCT)
+                    )}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+            <div className="mt-4 text-gray-700 text-sm">
+              <p>This calculator does not take into account:</p>
+              <ul className="list-disc list-inside">
+                <li>Clawbacks</li>
+                <li>
+                  Undistributed Claims (available at least one year after
+                  effective date)
+                </li>
+              </ul>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card className="w-full max-w-xl mx-auto mt-8">
-        <CardHeader>
-          <CardTitle>Estimated recovery</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Recovery %</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>Liquid crypto</TableCell>
-                <TableCell className="text-right">
-                  {(LIQUID_CRYPTO_RECOVERY_PCT * 100).toFixed(2)}%
-                </TableCell>
-                <TableCell className="text-right">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT)}
-                  <div className="text-gray-700 text-xs">
-                    <div>
-                      ~
-                      {(
-                        (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
-                        2 /
-                        CRYPTO_PRICES["btc"]
-                      ).toFixed(4)}{" "}
-                      BTC
-                    </div>
-                    <div>
-                      ~
-                      {(
-                        (totalUSDWithIncrease * LIQUID_CRYPTO_RECOVERY_PCT) /
-                        2 /
-                        CRYPTO_PRICES["eth"]
-                      ).toFixed(4)}{" "}
-                      ETH
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Illiquid asset recovery</TableCell>
-                <TableCell className="text-right">
-                  {(ILLIQUID_RECOVERY_PCT * 100).toFixed(2)}%
-                </TableCell>
-                <TableCell className="text-right">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(totalUSDWithIncrease * ILLIQUID_RECOVERY_PCT)}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>MiningCo common stock</TableCell>
-                <TableCell className="text-right">
-                  {(MININGCO_RECOVERY_PCT * 100).toFixed(2)}%
-                </TableCell>
-                <TableCell className="text-right">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(totalUSDWithIncrease * MININGCO_RECOVERY_PCT)}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell>Total estimated recovery</TableCell>
-                <TableCell className="text-right">
-                  {(TOTAL_RECOVERY_PCT * 100).toFixed(2)}%
-                </TableCell>
-                <TableCell className="text-right">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(
-                    totalUSDWithIncrease *
-                      (LIQUID_CRYPTO_RECOVERY_PCT +
-                        ILLIQUID_RECOVERY_PCT +
-                        MININGCO_RECOVERY_PCT)
-                  )}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-          <div className="mt-4 text-gray-700 text-sm">
-            <p>This calculator does not take into account:</p>
-            <ul className="list-disc list-inside">
-              <li>Clawbacks</li>
-              <li>
-                Undistributed Claims (available at least one year after
-                effective date)
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-      <div className="w-full max-w-xl mx-auto mt-8 px-4 text-center text-sm text-gray-700 space-y-2">
-        <p>
-          Based on the Celsius Recovery Sheet created by{" "}
-          <a
-            href="https://twitter.com/bayanimills"
-            className="text-blue-600 hover:text-blue-800 visited:text-purple-600"
-          >
-            @bayanimills
-          </a>
-          .
-        </p>
-        <p>
-          Disclaimer: This calculator is provided for informational purposes
-          only and should not be considered legal, tax, or financial advice.
-          Please consult with a professional advisor before making any financial
-          decisions. We are not responsible for any errors or omissions, or for
-          the results obtained from the use of this information.
-        </p>
-        <p>Last updated: {new Date(LAST_UPDATED).toUTCString()}</p>
+          </CardContent>
+        </Card>
+        <div className="w-full max-w-xl mx-auto mt-8 px-4 text-center text-sm text-gray-700 space-y-2">
+          <p>
+            Based on the Celsius Recovery Sheet created by{" "}
+            <a
+              href="https://twitter.com/bayanimills"
+              className="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+            >
+              @bayanimills
+            </a>
+            .
+          </p>
+          <p>
+            Disclaimer: This calculator is provided for informational purposes
+            only and should not be considered legal, tax, or financial advice.
+            Please consult with a professional advisor before making any
+            financial decisions. We are not responsible for any errors or
+            omissions, or for the results obtained from the use of this
+            information.
+          </p>
+          <p>Last updated: {new Date(LAST_UPDATED).toUTCString()}</p>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
