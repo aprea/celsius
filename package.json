@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "next",
-    "build": "node coin-prices.js; next build",
+    "build": "next build",
     "start": "next start",
     "type-check": "tsc"
   },
