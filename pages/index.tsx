@@ -304,93 +304,97 @@ const Home: NextPage = () => {
           <CardHeader>
             <CardTitle>Estimated recovery</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Recovery %</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell>Liquid crypto</TableCell>
-                  <TableCell className="text-right">
-                    {(liquidCryptoRecoveryPct * 100).toFixed(2)}%
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(totalUSDWithIncrease * liquidCryptoRecoveryPct)}
-                    <div className="text-gray-700 text-xs">
-                      <div>
-                        ~
-                        {(
-                          (totalUSDWithIncrease * liquidCryptoRecoveryPct) /
-                          2 /
-                          cryptoPrices.btc
-                        ).toFixed(4)}{" "}
-                        BTC
-                      </div>
-                      <div>
-                        ~
-                        {(
-                          (totalUSDWithIncrease * liquidCryptoRecoveryPct) /
-                          2 /
-                          cryptoPrices.eth
-                        ).toFixed(4)}{" "}
-                        ETH
-                      </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">Type</TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Recovery %
+                </TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Amount
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>Liquid crypto</TableCell>
+                <TableCell className="text-right">
+                  {(liquidCryptoRecoveryPct * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSDWithIncrease * liquidCryptoRecoveryPct)}
+                  <div className="text-gray-700 text-xs">
+                    <div className="whitespace-nowrap">
+                      ~
+                      {(
+                        (totalUSDWithIncrease * liquidCryptoRecoveryPct) /
+                        2 /
+                        cryptoPrices.btc
+                      ).toFixed(4)}{" "}
+                      BTC
                     </div>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Illiquid asset recovery</TableCell>
-                  <TableCell className="text-right">
-                    {(ILLIQUID_RECOVERY_PCT * 100).toFixed(2)}%
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(totalUSDWithIncrease * ILLIQUID_RECOVERY_PCT)}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>MiningCo common stock</TableCell>
-                  <TableCell className="text-right">
-                    {(MININGCO_RECOVERY_PCT * 100).toFixed(2)}%
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(totalUSDWithIncrease * MININGCO_RECOVERY_PCT)}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell>Total estimated recovery</TableCell>
-                  <TableCell className="text-right">
-                    {(totalRecoveryPct * 100).toFixed(2)}%
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(
-                      totalUSDWithIncrease *
-                        (liquidCryptoRecoveryPct +
-                          ILLIQUID_RECOVERY_PCT +
-                          MININGCO_RECOVERY_PCT)
-                    )}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
+                    <div className="whitespace-nowrap">
+                      ~
+                      {(
+                        (totalUSDWithIncrease * liquidCryptoRecoveryPct) /
+                        2 /
+                        cryptoPrices.eth
+                      ).toFixed(4)}{" "}
+                      ETH
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Illiquid asset recovery</TableCell>
+                <TableCell className="text-right">
+                  {(ILLIQUID_RECOVERY_PCT * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSDWithIncrease * ILLIQUID_RECOVERY_PCT)}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>MiningCo common stock</TableCell>
+                <TableCell className="text-right">
+                  {(MININGCO_RECOVERY_PCT * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(totalUSDWithIncrease * MININGCO_RECOVERY_PCT)}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell>Total estimated recovery</TableCell>
+                <TableCell className="text-right">
+                  {(totalRecoveryPct * 100).toFixed(2)}%
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(
+                    totalUSDWithIncrease *
+                      (liquidCryptoRecoveryPct +
+                        ILLIQUID_RECOVERY_PCT +
+                        MININGCO_RECOVERY_PCT)
+                  )}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+          <CardContent>
             <div className="mt-4 text-gray-700 text-sm">
               <p>This calculator does not take into account:</p>
               <ul className="list-disc list-inside">
